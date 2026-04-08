@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aspire IT — ZIP Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a26;
+    --accent: #00e5ff;
+    --accent2: #ff3cac;
+    --gold: #ffd700;
+    --text: #f0f0ff;
+    --muted: #6b6b8a;
+    --border: rgba(255,255,255,0.08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BG */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* VIEWS */
+  .view { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .view.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; }
+
+  /* LOGO */
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    opacity: 0.8;
+  }
+
+  /* TITLE */
+  .game-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(3rem, 15vw, 6rem);
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 30px rgba(0,229,255,0.3));
+  }
+
+  .tagline {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* INPUT */
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 18px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  /* BUTTON */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+  }
+  .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 0.75rem;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ZIP GAME */
+  .zip-instructions {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+  .zip-instructions span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .sequence-display {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .seq-item {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .seq-item.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,255,0.1);
+    box-shadow: 0 0 20px rgba(0,229,255,0.2);
+  }
+  .seq-item.done {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(255,60,172,0.1);
+  }
+  .seq-item.wrong {
+    border-color: #ff4444;
+    color: #ff4444;
+    background: rgba(255,68,68,0.1);
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+
+  .zip-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .zip-btn {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .zip-btn:hover { background: rgba(0,229,255,0.08); border-color: var(--accent); }
+  .zip-btn:active { transform: scale(0.92); }
+  .zip-btn.correct { background: rgba(255,60,172,0.15); border-color: var(--accent2); color: var(--accent2); }
+
+  /* TIMER */
+  .timer-display {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    text-align: center;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    letter-spacing: 0.05em;
+    filter: drop-shadow(0 0 20px rgba(0,229,255,0.4));
+  }
+
+  .player-name-display {
+    text-align: center;
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+  .player-name-display strong { color: var(--text); }
+
+  /* SUCCESS */
+  .success-icon {
+    font-size: 4rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    animation: pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .success-time {
+    font-family: 'Syne', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, var(--gold), #ffaa00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  .success-label { text-align: center; color: var(--muted); font-size: 14px; margin-bottom: 1.5rem; }
+  .success-name { text-align: center; font-size: 18px; font-weight: 600; margin-bottom: 2rem; color: var(--text); }
+
+  /* HOST VIEW */
+  .host-header {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  .host-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .live-badge {
+    background: rgba(255,60,172,0.15);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--accent2);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  .leaderboard {
+    width: 100%;
+    max-width: 700px;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .lb-row.first { border-color: var(--gold); background: rgba(255,215,0,0.05); }
+  .lb-row.second { border-color: #c0c0c0; background: rgba(192,192,192,0.05); }
+  .lb-row.third { border-color: #cd7f32; background: rgba(205,127,50,0.05); }
+
+  .lb-rank {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    min-width: 36px;
+    text-align: center;
+  }
+  .lb-name { flex: 1; font-size: 16px; font-weight: 500; }
+  .lb-time {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .lb-time.fast { color: var(--gold); }
+
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 3rem;
+    font-size: 15px;
+  }
+
+  .host-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 700px;
+  }
+  .host-controls .btn { font-size: 13px; padding: 10px; }
+
+  /* NAV */
+  .nav {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+  }
+  .nav-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .count-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 4px;
+  }
+
+  /* QR section */
+  .qr-box {
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  .qr-box img { display: block; width: 160px; height: 160px; }
+  .url-display {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    word-break: break-all;
+  }
+  .url-display a { color: var(--accent); text-decoration: none; }
+
+  #progress-bar-wrap {
+    width: 100%;
+    height: 4px;
+    background: var(--surface);
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.2s;
+  }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <button class="nav-btn" onclick="showView('home')">Game</button>
+  <button class="nav-btn" onclick="showView('host')">🔒 Host <span class="count-badge" id="nav-count">0</span></button>
+</div>
+
+<!-- HOME / PLAYER VIEW -->
+<div class="view active" id="view-home">
+  <div class="logo">Aspire IT — Party 2025</div>
+  <div class="game-title">ZIP!</div>
+  <div class="tagline">How fast are you?</div>
+  <div class="card">
+    <input type="text" id="player-name" placeholder="Enter your name..." maxlength="30" />
+    <button class="btn btn-primary" onclick="startGame()">Let's Go ⚡</button>
+  </div>
+</div>
+
+<!-- GAME VIEW -->
+<div class="view" id="view-game">
+  <div class="logo">Aspire IT — ZIP Game</div>
+  <div class="player-name-display">Playing as <strong id="display-name"></strong></div>
+  <div class="timer-display" id="timer">0.00s</div>
+  <div class="card">
+    <div class="zip-instructions">
+      Tap the numbers <span>1 → 2 → 3 → ... → 20</span> in order as fast as you can!
+    </div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    <div class="sequence-display" id="sequence-display"></div>
+    <div class="zip-grid" id="zip-grid"></div>
+  </div>
+</div>
+
+<!-- SUCCESS VIEW -->
+<div class="view" id="view-success">
+  <div class="success-icon">🎉</div>
+  <div class="success-name" id="success-name"></div>
+  <div class="success-time" id="success-time"></div>
+  <div class="success-label">seconds — your time is recorded!</div>
+  <div class="card" style="text-align:center; max-width:360px;">
+    <p style="color:var(--muted); font-size:14px; margin-bottom:1.25rem;">Tell the host to check the leaderboard. Good luck! 🏆</p>
+    <button class="btn btn-primary" onclick="resetGame()">Play Again</button>
+  </div>
+</div>
+
+<!-- HOST VIEW -->
+<div class="view" id="view-host">
+  <div class="host-header">
+    <div class="host-title">🔒 Host Leaderboard</div>
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+  </div>
+  <div class="leaderboard" id="leaderboard-list">
+    <div class="empty-state">Waiting for players to submit... 👀</div>
+  </div>
+  <div class="host-controls">
+    <button class="btn btn-ghost" onclick="clearScores()" style="flex:1;">Clear All Scores</button>
+    <button class="btn btn-primary" onclick="refreshLeaderboard()" style="flex:2;">Refresh 🔄</button>
+  </div>
+</div>
+
+<script>
+  // ---- BACKEND CONFIG ----
+  // For local development: http://localhost:3000/api
+  // For other devices on the same network, replace localhost with your machine's IP,
+  // e.g. http://192.168.1.42:3000/api
+  const API_BASE = 'http://localhost:3000/api';
+
+  // ---- STATE ----
+  let playerName = '';
+  let timerInterval = null;
+  let startTime = null;
+  let currentTarget = 1;
+  let totalNumbers = 20;
+  let gridNumbers = [];
+  let gameActive = false;
+
+  // ---- API HELPERS ----
+
+  // Fetch all scores from the backend (returns array, empty on error)
+  async function getScores() {
+    try {
+      const res = await fetch(`${API_BASE}/scores`);
+      if (!res.ok) throw new Error('Failed to fetch scores');
+      const data = await res.json();
+      return data.scores || [];
+    } catch (err) {
+      console.error('getScores error:', err);
+      return [];
+    }
+  }
+
+  // Post a new score to the backend
+  async function saveScore(name, time) {
+    try {
+      const res = await fetch(`${API_BASE}/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, time }),
+      });
+      if (!res.ok) throw new Error('Failed to save score');
+      return await res.json();
+    } catch (err) {
+      console.error('saveScore error:', err);
+    }
+  }
+
+  // Delete all scores on the backend
+  async function clearScores() {
+    if (!confirm('Clear all scores?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/scores`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to clear scores');
+    } catch (err) {
+      console.error('clearScores error:', err);
+    }
+    refreshLeaderboard();
+  }
+
+  // ---- VIEWS ----
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    if (name === 'host') refreshLeaderboard();
+  }
+
+  // ---- GAME ----
+  function startGame() {
+    const input = document.getElementById('player-name');
+    playerName = input.value.trim();
+    if (!playerName) { input.focus(); input.style.borderColor = 'var(--accent2)'; return; }
+    input.style.borderColor = '';
+    document.getElementById('display-name').textContent = playerName;
+    buildGrid();
+    showView('game');
+    beginTimer();
+  }
+
+  function buildGrid() {
+    currentTarget = 1;
+    gameActive = true;
+    gridNumbers = Array.from({length: totalNumbers}, (_, i) => i + 1);
+    // Shuffle
+    for (let i = gridNumbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gridNumbers[i], gridNumbers[j]] = [gridNumbers[j], gridNumbers[i]];
+    }
+
+    // Grid
+    const grid = document.getElementById('zip-grid');
+    grid.innerHTML = '';
+    gridNumbers.forEach(num => {
+      const btn = document.createElement('button');
+      btn.className = 'zip-btn';
+      btn.textContent = num;
+      btn.dataset.num = num;
+      btn.onclick = () => handleTap(num, btn);
+      grid.appendChild(btn);
+    });
+
+    // Sequence display
+    updateSequenceDisplay();
+    updateProgress();
+  }
+
+  function updateSequenceDisplay() {
+    const wrap = document.getElementById('sequence-display');
+    wrap.innerHTML = '';
+    const show = 5;
+    const start = Math.max(0, currentTarget - 2);
+    const end = Math.min(totalNumbers + 1, start + show);
+    for (let i = start; i < end; i++) {
+      const n = i + 1;
+      const el = document.createElement('div');
+      el.className = 'seq-item' + (n === currentTarget ? ' active' : (n < currentTarget ? ' done' : ''));
+      el.textContent = n;
+      wrap.appendChild(el);
+    }
+  }
+
+  function updateProgress() {
+    const pct = ((currentTarget - 1) / totalNumbers) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  function handleTap(num, btn) {
+    if (!gameActive) return;
+    if (num === currentTarget) {
+      btn.className = 'zip-btn correct';
+      btn.disabled = true;
+      currentTarget++;
+      updateSequenceDisplay();
+      updateProgress();
+      if (currentTarget > totalNumbers) {
+        finishGame();
+      }
+    } else {
+      btn.className = 'zip-btn wrong';
+      setTimeout(() => { btn.className = 'zip-btn'; }, 400);
+    }
+  }
+
+  function beginTimer() {
+    startTime = Date.now();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      document.getElementById('timer').textContent = elapsed + 's';
+    }, 50);
+  }
+
+  // finishGame is async so we can await the backend save before showing success
+  async function finishGame() {
+    gameActive = false;
+    clearInterval(timerInterval);
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    // Save to backend first, then update UI
+    await saveScore(playerName, parseFloat(elapsed));
+
+    document.getElementById('success-name').textContent = playerName;
+    document.getElementById('success-time').textContent = elapsed;
+
+    await updateNavCount();
+    showView('success');
+  }
+
+  function resetGame() {
+    document.getElementById('player-name').value = '';
+    showView('home');
+  }
+
+  // ---- LEADERBOARD ----
+  async function refreshLeaderboard() {
+    const scores = await getScores();
+    const list = document.getElementById('leaderboard-list');
+    await updateNavCount();
+
+    if (scores.length === 0) {
+      list.innerHTML = '<div class="empty-state">Waiting for players to submit... 👀</div>';
+      return;
+    }
+
+    const medals = ['🥇', '🥈', '🥉'];
+    const rankClasses = ['first', 'second', 'third'];
+
+    list.innerHTML = scores.map((s, i) => `
+      <div class="lb-row ${rankClasses[i] || ''}">
+        <div class="lb-rank">${medals[i] || (i + 1)}</div>
+        <div class="lb-name">${escapeHtml(s.name)}</div>
+        <div class="lb-time ${i === 0 ? 'fast' : ''}">${s.time.toFixed(2)}s</div>
+      </div>
+    `).join('');
+  }
+
+  async function updateNavCount() {
+    const scores = await getScores();
+    document.getElementById('nav-count').textContent = scores.length;
+  }
+
+  // Prevent XSS from player-submitted names in the leaderboard
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Auto-refresh host view every 3s
+  setInterval(() => {
+    const hostView = document.getElementById('view-host');
+    if (hostView.classList.contains('active')) refreshLeaderboard();
+  }, 3000);
+
+  updateNavCount();
+</script>
+</body>
+</html>
